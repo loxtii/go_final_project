@@ -1,4 +1,4 @@
-package storage
+package main
 
 import (
 	"database/sql"
@@ -10,30 +10,30 @@ import (
 )
 
 func InitDatabase(dataSource string) {
-	log.Println("[INFO] Conecting database...")
+	log.Println("[INFO] Connecting to database...")
 	db, err := sql.Open("sqlite", dataSource)
-	checkErr(err, "connection")
+	checkError(err, "connection")
 	defer db.Close()
 
 	if databaseNotExists() {
 		querySQL := `
 		CREATE TABLE IF NOT EXISTS scheduler (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		date DATE,
+		date VARCHAR(8),
 		title TEXT,
 		comment TEXT,
 		repeat VARCHAR(128));
 	    CREATE INDEX IF NOT EXISTS indexdate ON scheduler (date);`
 
-		log.Println("[INFO] Creating new database")
+		log.Println("[INFO] Creating new table...")
 		_, err = db.Exec(querySQL)
-		checkErr(err, "table")
+		checkError(err, "table")
 	}
 }
 
 func databaseNotExists() bool {
 	appPath, err := os.Executable()
-	checkErr(err, "finding the current path")
+	checkError(err, "finding the current path")
 
 	dbFile := filepath.Join(filepath.Dir(appPath), "./scheduler.db")
 	_, err = os.Stat(dbFile)
@@ -41,7 +41,7 @@ func databaseNotExists() bool {
 	return err != nil
 }
 
-func checkErr(err error, s string) {
+func checkError(err error, s string) {
 	if err != nil {
 		log.Println("[Error] Failed: " + s)
 		log.Fatal(err)

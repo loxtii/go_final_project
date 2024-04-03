@@ -4,7 +4,6 @@ go 1.22.0
 
 require (
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/stretchr/testify v1.9.0
 	modernc.org/sqlite v1.29.5
 )
