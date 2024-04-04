@@ -87,6 +87,17 @@ func TasksToDto(tasks []Task) []TaskInputDTO {
 	return dtos
 }
 
+func TaskToDto(task Task) TaskInputDTO {
+
+	return TaskInputDTO{
+		ID:      strconv.Itoa(int(task.ID)),
+		Date:    task.Date,
+		Title:   task.Title,
+		Comment: task.Comment,
+		Repeat:  task.Repeat,
+	}
+}
+
 func makeDate(datetime time.Time) time.Time {
 	y, m, d := datetime.Date()
 

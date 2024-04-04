@@ -24,14 +24,14 @@ func main() {
 	// creating new table
 	s.InitDatabase()
 	// creating new task-service
-	ts := NewTaskService(s)
+	t := NewTaskService(s)
 
 	// intializing handlers for web-server
 	http.Handle("/", http.FileServer(http.Dir("./web/")))
 	http.Handle("/api/nextdate", http.HandlerFunc(NextDate))
 
-	http.Handle("/api/task", http.HandlerFunc(ts.TaskHandler))       // POST GET PUT DELETE
-	http.Handle("GET /api/tasks", http.HandlerFunc(ts.TasksHandler)) // GET
+	http.Handle("/api/task", http.HandlerFunc(t.TaskHandler))       // POST GET PUT DELETE
+	http.Handle("GET /api/tasks", http.HandlerFunc(t.TasksHandler)) // GET
 	//http.HandleFunc("/api/task/done", http.HandlerFunc(DoneHandler)) // POST    "GET /api/tasks"
 
 	// starting web-server

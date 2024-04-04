@@ -63,35 +63,68 @@ func (s Storage) InsertTask(task Task) (int, error) {
 }
 
 func (s Storage) SelectTasks() ([]Task, error) {
-	// log.Println("[WE IN STORAGE] ")
 	var tasks []Task
 	querySQL := `SELECT id, date, title, comment, repeat 
 				 FROM scheduler 
 				 ORDER BY date ASC
 				 LIMIT 10`
 	rows, err := s.db.Query(querySQL)
-
-	// err := s.db.Select(&tasks, querySQL, time.Now().Format("20060102"))  needed   github.com/jmoiron/sqlx
+	// err := s.db.Select(&tasks, querySQL, time.Now().Format("20060102"))  нужна   github.com/jmoiron/sqlx
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
-	// log.Println("[Query Select OK] ")
 	defer rows.Close()
 
 	for rows.Next() {
 		task := Task{}
 
 		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
-		log.Println("[Scan OK] ")
 		if err != nil {
 			return nil, err
 		}
-
-		log.Println("[DATE] " + task.Date)
-
 		tasks = append(tasks, task)
 	}
-
 	return tasks, nil
+}
 
+func (s Storage) SelectById(id int) (Task, error) {
+	var task Task
+	querySQL := `SELECT id, date, title, comment, repeat 
+				 FROM scheduler 
+				 WHERE id = :id`
+	row, _ := s.db.Query(querySQL, sql.Named("id", id)) // , sql.Named("id", id)
+
+	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+
+	if err != nil {
+		return task, fmt.Errorf("query failed: %w", err)
+	}
+
+	return task, nil
+}
+
+func (s Storage) UpdateTask(task Task) error {
+	querySQL := `UPDATE scheduler 
+				 SET date = :date, title = :title, comment = :comment, repeat = :repeat 
+				 WHERE id = :id`
+	res, err := s.db.Exec(querySQL,
+		sql.Named("id", task.ID),
+		sql.Named("date", task.Date),
+		sql.Named("title", task.Title),
+		sql.Named("comment", task.Comment),
+		sql.Named("repeat", task.Repeat))
+
+	if err != nil {
+		return fmt.Errorf("[UPDATE] failed: %w", err)
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("[UPDATE] RowsAffection failed: %w", err)
+	}
+
+	if n == 0 {
+		return fmt.Errorf("update failed")
+	}
+	return nil
 }
