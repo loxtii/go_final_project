@@ -61,3 +61,37 @@ func (s Storage) InsertTask(task Task) (int, error) {
 
 	return int(id), nil
 }
+
+func (s Storage) SelectTasks() ([]Task, error) {
+	// log.Println("[WE IN STORAGE] ")
+	var tasks []Task
+	querySQL := `SELECT id, date, title, comment, repeat 
+				 FROM scheduler 
+				 ORDER BY date ASC
+				 LIMIT 10`
+	rows, err := s.db.Query(querySQL)
+
+	// err := s.db.Select(&tasks, querySQL, time.Now().Format("20060102"))  needed   github.com/jmoiron/sqlx
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	// log.Println("[Query Select OK] ")
+	defer rows.Close()
+
+	for rows.Next() {
+		task := Task{}
+
+		err := rows.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
+		log.Println("[Scan OK] ")
+		if err != nil {
+			return nil, err
+		}
+
+		log.Println("[DATE] " + task.Date)
+
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
+
+}

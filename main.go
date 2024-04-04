@@ -30,9 +30,9 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./web/")))
 	http.Handle("/api/nextdate", http.HandlerFunc(NextDate))
 
-	http.Handle("/api/task", http.HandlerFunc(ts.TaskHandler)) // POST GET PUT DELETE
-	// http.Handle("/api/tasks", http.HandlerFunc(TasksHandler)) // GET
-	//http.HandleFunc("/api/task/done", http.HandlerFunc(DoneHandler)) // POST
+	http.Handle("/api/task", http.HandlerFunc(ts.TaskHandler))       // POST GET PUT DELETE
+	http.Handle("GET /api/tasks", http.HandlerFunc(ts.TasksHandler)) // GET
+	//http.HandleFunc("/api/task/done", http.HandlerFunc(DoneHandler)) // POST    "GET /api/tasks"
 
 	// starting web-server
 	log.Println("[INFO] Starting server on port 7540...")

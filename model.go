@@ -26,9 +26,9 @@ type TaskInputDTO struct {
 	Repeat  string `json:"repeat"`
 }
 
-// type ResponseTasks struct {
-// 	Tasks []TaskDTO `json:"tasks"`
-// }
+type ResponseTasks struct {
+	Dtos []TaskInputDTO `json:"tasks"`
+}
 
 func DtoToTask(dto TaskInputDTO) (Task, error) {
 	if dto.Title == "" {
@@ -70,6 +70,21 @@ func DtoToTask(dto TaskInputDTO) (Task, error) {
 		Comment: dto.Comment,
 		Repeat:  dto.Repeat,
 	}, nil
+}
+
+func TasksToDto(tasks []Task) []TaskInputDTO {
+	dtos := make([]TaskInputDTO, 0, len(tasks))
+
+	for _, task := range tasks {
+		dtos = append(dtos, TaskInputDTO{
+			ID:      strconv.Itoa(int(task.ID)),
+			Date:    task.Date,
+			Title:   task.Title,
+			Comment: task.Comment,
+			Repeat:  task.Repeat,
+		})
+	}
+	return dtos
 }
 
 func makeDate(datetime time.Time) time.Time {

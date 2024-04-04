@@ -16,6 +16,30 @@ func NewTaskService(storage *Storage) TaskService {
 	return TaskService{storage: storage}
 }
 
+func (t TaskService) TasksHandler(w http.ResponseWriter, r *http.Request) {
+	// if r.Method != http.MethodGet {
+	// 	http.Error(w, fmt.Sprintf(`{"error":"wrong method"}`), http.StatusBadRequest)
+	// }
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+	tasksFromDB, _ := t.storage.SelectTasks()
+
+	dtos := TasksToDto(tasksFromDB)
+
+	response := ResponseTasks{Dtos: dtos}
+
+	responseBody, err := json.Marshal(response)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+		log.Println("json Marshal:", err)
+
+		return
+	}
+	w.Write(responseBody)
+}
+
 func (t TaskService) TaskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
