@@ -24,12 +24,48 @@ func NextDate(w http.ResponseWriter, r *http.Request) {
 	checkErr(w, err, "repeat not empty")
 
 	nextDate, err := CalculateNextDate(dateTime, nowTime, repeat)
-	checkErr(w, err, "bad calculating")
+	checkErr(w, err, "bad calculating") //  возможно лучче кинуть http.StatusInternalServerError
 
 	log.Println("[Info] FOR now =", now, "date =", date, "repeat =", repeat)
 	log.Println("[Info] nextDate =", nextDate.Format("20060102"), "err =", err)
 
 	w.Write([]byte(nextDate.Format("20060102")))
+}
+
+func CalculateNextDate(date, now time.Time, repeat string) (time.Time, error) {
+	nextDate := date
+	repeat_array := strings.Split(repeat, " ")
+	switch repeat_array[0] {
+	case "y":
+		for {
+			nextDate = nextDate.AddDate(1, 0, 0)
+
+			if nextDate.After(now) {
+				break
+			}
+		}
+	case "d":
+		if len(repeat_array) != 2 {
+			return nextDate, errors.New("wrong repeat size")
+		}
+		days, err := strconv.Atoi(repeat_array[1])
+		if err != nil {
+			return nextDate, err
+		}
+		if days > 400 {
+			return nextDate, errors.New("more than 400 days")
+		}
+		for {
+			nextDate = nextDate.AddDate(0, 0, days)
+
+			if nextDate.After(now) {
+				break
+			}
+		}
+	default:
+		return nextDate, errors.New("wrong repeat format")
+	}
+	return nextDate, nil
 }
 
 func errorIfEmpty(s string) error {
@@ -47,49 +83,4 @@ func checkErr(w http.ResponseWriter, err error, s string) {
 	}
 
 	log.Println("[Info] Success: " + s)
-}
-
-func CalculateNextDate(date, now time.Time, repeat string) (time.Time, error) {
-
-	nextDate := date
-
-	repeat_array := strings.Split(repeat, " ")
-
-	switch repeat_array[0] {
-
-	case "y":
-		for {
-			nextDate = nextDate.AddDate(1, 0, 0)
-
-			if nextDate.After(now) {
-				break
-			}
-		}
-
-	case "d":
-		if len(repeat_array) != 2 {
-			return nextDate, errors.New("wrong repeat size")
-		}
-		days, err := strconv.Atoi(repeat_array[1])
-		if err != nil {
-			return nextDate, err
-		}
-
-		if days > 400 {
-			return nextDate, errors.New("more than 400 days")
-		}
-
-		for {
-			nextDate = nextDate.AddDate(0, 0, days)
-
-			if nextDate.After(now) {
-				break
-			}
-		}
-
-	default:
-		return nextDate, errors.New("wrong repeat format")
-	}
-
-	return nextDate, nil
 }

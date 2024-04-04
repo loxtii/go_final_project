@@ -2,43 +2,34 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
 
-func InitDatabase(dataSource string) {
-	log.Println("[INFO] Connecting to database...")
-	db, err := sql.Open("sqlite", dataSource)
-	checkError(err, "connection")
-	defer db.Close()
+type Storage struct {
+	db *sql.DB
+}
 
-	if databaseNotExists() {
-		querySQL := `
+func NewStorage(db *sql.DB) *Storage {
+	return &Storage{db: db}
+}
+
+func (s Storage) InitDatabase() {
+	querySQL := `
 		CREATE TABLE IF NOT EXISTS scheduler (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		date VARCHAR(8),
-		title TEXT,
+		id INTEGER PRIMARY KEY,
+		date VARCHAR(8) NOT NULL,
+		title TEXT NOT NULL,
 		comment TEXT,
 		repeat VARCHAR(128));
 	    CREATE INDEX IF NOT EXISTS indexdate ON scheduler (date);`
 
-		log.Println("[INFO] Creating new table...")
-		_, err = db.Exec(querySQL)
-		checkError(err, "table")
-	}
-}
+	log.Println("[INFO] Creating new table...")
+	_, err := s.db.Exec(querySQL)
+	checkError(err, "table")
 
-func databaseNotExists() bool {
-	appPath, err := os.Executable()
-	checkError(err, "finding the current path")
-
-	dbFile := filepath.Join(filepath.Dir(appPath), "./scheduler.db")
-	_, err = os.Stat(dbFile)
-
-	return err != nil
 }
 
 func checkError(err error, s string) {
@@ -47,4 +38,26 @@ func checkError(err error, s string) {
 		log.Fatal(err)
 	}
 	log.Println("[Info] Success: " + s)
+}
+
+func (s Storage) InsertTask(task Task) (int, error) {
+	querySQL := `INSERT INTO scheduler (date, title, comment, repeat) 
+	             VALUES (:date, :title, :comment, :repeat)`
+	res, err := s.db.Exec(querySQL,
+		sql.Named("date", task.Date),
+		sql.Named("title", task.Title),
+		sql.Named("comment", task.Comment),
+		sql.Named("repeat", task.Repeat))
+
+	if err != nil {
+		return 0, fmt.Errorf("add query error: %w", err)
+	}
+	log.Println("[Info] Success: add query executed ")
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("last insertion id error: %w", err)
+	}
+
+	return int(id), nil
 }
