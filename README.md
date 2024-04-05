@@ -30,8 +30,8 @@
 
 1. **Клонируем репозитарий:**
 ```shell
-git clone https://github.com/Parjun2000/task-manager.git
-cd task-manager
+git git@github.com:loxtii/go_final_project.git
+cd go_final_project
 ```
 2. **Подтягиваем зависимости:**
 ```shell
