@@ -108,7 +108,7 @@ func (t TaskService) getTask(w http.ResponseWriter, r *http.Request) {
 
 	num := r.FormValue("id")
 	if num == "" {
-		http.Error(w, "error\":\"empty param", http.StatusBadRequest)
+		http.Error(w, `{"error":"true"}`, http.StatusBadRequest)
 		log.Println("[WARN] empty param")
 		return
 	}
