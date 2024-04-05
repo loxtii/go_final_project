@@ -39,7 +39,6 @@ func CalculateNextDate(date, now time.Time, repeat string) (time.Time, error) {
 	case "y":
 		for {
 			nextDate = nextDate.AddDate(1, 0, 0)
-
 			if nextDate.After(now) {
 				break
 			}
@@ -57,7 +56,6 @@ func CalculateNextDate(date, now time.Time, repeat string) (time.Time, error) {
 		}
 		for {
 			nextDate = nextDate.AddDate(0, 0, days)
-
 			if nextDate.After(now) {
 				break
 			}
@@ -81,6 +79,5 @@ func checkErr(w http.ResponseWriter, err error, s string) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	log.Println("[Info] Success: " + s)
 }
