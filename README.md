@@ -30,7 +30,8 @@
 
 1. **Клонируем репозитарий:**
 ```shell
-git git@github.com:loxtii/go_final_project.git
+git clone git@github.com:loxtii/go_final_project.git
+(git clone https://github.com/loxtii/go_final_project.git)
 cd go_final_project
 ```
 2. **Подтягиваем зависимости:**
