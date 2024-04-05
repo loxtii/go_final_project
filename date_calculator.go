@@ -24,7 +24,7 @@ func NextDate(w http.ResponseWriter, r *http.Request) {
 	checkErr(w, err, "repeat not empty")
 
 	nextDate, err := CalculateNextDate(dateTime, nowTime, repeat)
-	checkErr(w, err, "bad calculating") //  возможно лучче кинуть http.StatusInternalServerError
+	checkErr(w, err, "bad calculating")
 
 	log.Println("[Info] FOR now =", now, "date =", date, "repeat =", repeat)
 	log.Println("[Info] nextDate =", nextDate.Format("20060102"), "err =", err)

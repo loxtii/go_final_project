@@ -29,7 +29,6 @@ func (s Storage) InitDatabase() {
 	log.Println("[INFO] Creating new table...")
 	_, err := s.db.Exec(querySQL)
 	checkError(err, "table")
-
 }
 
 func checkError(err error, s string) {
@@ -69,7 +68,6 @@ func (s Storage) SelectTasks() ([]Task, error) {
 				 ORDER BY date ASC
 				 LIMIT 10`
 	rows, err := s.db.Query(querySQL)
-	// err := s.db.Select(&tasks, querySQL, time.Now().Format("20060102"))  нужна   github.com/jmoiron/sqlx
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
@@ -89,15 +87,15 @@ func (s Storage) SelectTasks() ([]Task, error) {
 
 func (s Storage) SelectById(id int) (Task, error) {
 	var task Task
-	querySQL := `SELECT id, date, title, comment, repeat 
-				 FROM scheduler 
-				 WHERE id = :id`
-	row, _ := s.db.Query(querySQL, sql.Named("id", id)) // , sql.Named("id", id)
+	querySQL := `SELECT id, date, title, comment, repeat
+ 				 FROM scheduler
+ 				 WHERE id = :id`
+
+	row := s.db.QueryRow(querySQL, sql.Named("id", id))
 
 	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
-
 	if err != nil {
-		return task, fmt.Errorf("query failed: %w", err)
+		return task, err
 	}
 
 	return task, nil
@@ -125,6 +123,24 @@ func (s Storage) UpdateTask(task Task) error {
 
 	if n == 0 {
 		return fmt.Errorf("update failed")
+	}
+	return nil
+}
+
+func (s Storage) DeleteTask(id int) error {
+	querySQL := `DELETE FROM scheduler 
+				 WHERE id = :id`
+	res, err := s.db.Exec(querySQL, sql.Named("id", id))
+	if err != nil {
+		return fmt.Errorf("deleteTask failed: %w", err)
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("getting RowsAffected failed: %w", err)
+	}
+	if n == 0 {
+		return fmt.Errorf("delete failed")
 	}
 	return nil
 }

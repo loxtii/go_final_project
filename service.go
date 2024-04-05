@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type TaskService struct {
@@ -41,13 +42,32 @@ func (t TaskService) TaskHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		t.editTask(w, r)
 	case http.MethodDelete:
-		//removeTask(w, r)
+		t.removeTask(w, r)
 	}
 }
 
-func (t TaskService) editTask(w http.ResponseWriter, r *http.Request) {
-	var inDTO TaskInputDTO
+func (t TaskService) removeTask(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil {
+		http.Error(w, `{"error":"wrong id"}`, http.StatusBadRequest)
+		log.Println("Atoi:", err)
 
+		return
+	}
+
+	err = t.storage.DeleteTask(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Write([]byte(`{}`))
+}
+
+func (t TaskService) editTask(w http.ResponseWriter, r *http.Request) {
+
+	var inDTO DTO
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	if err := json.NewDecoder(r.Body).Decode(&inDTO); err != nil {
@@ -81,30 +101,33 @@ func (t TaskService) editTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(`{}`))
-
 }
 
 func (t TaskService) getTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	num := r.FormValue("id")
+	if num == "" {
+		http.Error(w, "error\":\"empty param", http.StatusBadRequest)
+		log.Println("[WARN] empty param")
+		return
+	}
+
+	id, err := strconv.Atoi(num)
 	if err != nil {
-		http.Error(w, `{"error":"wrong id"}`, http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
 		log.Println("[WARN] Failed convertation:", err)
 		return
 	}
 
-	log.Println("[By 1  Id] до перехода в сторидж ")
-
-	task, err := t.storage.SelectById(int(id))
+	task, err := t.storage.SelectById(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
-
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusBadRequest)
+		log.Println("[WARN] Failed convertation:", err)
 		return
 	}
-	dto := TaskToDto(task)
 
-	log.Println("[By 5  Id] дто отработало ")
+	dto := TaskToDto(task)
 
 	responseBody, err := json.Marshal(dto)
 	if err != nil {
@@ -114,11 +137,14 @@ func (t TaskService) getTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(responseBody)
+	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(responseBody); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+	}
 }
 
 func (t TaskService) addTask(w http.ResponseWriter, r *http.Request) {
-	var inDTO TaskInputDTO
+	var inDTO DTO
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	err := json.NewDecoder(r.Body).Decode(&inDTO)
@@ -147,4 +173,52 @@ func (t TaskService) addTask(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("[Info] Success: Task added with id = " + strconv.Itoa(id))
 	w.Write([]byte(fmt.Sprintf(`{"id":"%d"}`, id)))
+}
+
+func (t TaskService) DoneHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	num := r.FormValue("id")
+	id, err := strconv.Atoi(num)
+	if err != nil {
+		http.Error(w, `{"error":"wrong id"}`, http.StatusBadRequest)
+		log.Println("Atoi:", err)
+
+		return
+	}
+
+	err = t.getTaskDone(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Write([]byte(`{}`))
+}
+
+func (t TaskService) getTaskDone(id int) error {
+	task, err := t.storage.SelectById(id)
+	if err != nil {
+		return fmt.Errorf(`{"error":"%s"}`, err.Error())
+	}
+
+	if task.Repeat == "" {
+		return t.storage.DeleteTask(id)
+	}
+
+	date, err := time.Parse("20060102", task.Date)
+	if err != nil {
+		return fmt.Errorf("invalid date format in db")
+	}
+
+	nextDate, _ := CalculateNextDate(date, time.Now(), task.Repeat)
+
+	task.Date = nextDate.Format("20060102")
+
+	err = t.storage.UpdateTask(task)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

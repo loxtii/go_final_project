@@ -14,11 +14,7 @@ type Task struct {
 	Repeat  string
 }
 
-// func (t Task) String() string {
-// 	return fmt.Sprintf("ID: %d, Date: %s, Title: %s, Comment: %s, Repeat: %s", t.ID, t.Date, t.Title, t.Comment, t.Repeat)
-// }
-
-type TaskInputDTO struct {
+type DTO struct {
 	ID      string `json:"id"`
 	Date    string `json:"date"`
 	Title   string `json:"title"`
@@ -27,15 +23,16 @@ type TaskInputDTO struct {
 }
 
 type ResponseTasks struct {
-	Dtos []TaskInputDTO `json:"tasks"`
+	Dtos []DTO `json:"tasks"`
 }
 
-func DtoToTask(dto TaskInputDTO) (Task, error) {
+func DtoToTask(dto DTO) (Task, error) {
 	if dto.Title == "" {
 		return Task{}, fmt.Errorf("empty title")
 	}
 
-	today := makeDate(time.Now())
+	y, m, d := time.Now().Date()
+	today := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	date := today
 
 	var err error
@@ -72,11 +69,11 @@ func DtoToTask(dto TaskInputDTO) (Task, error) {
 	}, nil
 }
 
-func TasksToDto(tasks []Task) []TaskInputDTO {
-	dtos := make([]TaskInputDTO, 0, len(tasks))
+func TasksToDto(tasks []Task) []DTO {
+	dtos := make([]DTO, 0, len(tasks))
 
 	for _, task := range tasks {
-		dtos = append(dtos, TaskInputDTO{
+		dtos = append(dtos, DTO{
 			ID:      strconv.Itoa(int(task.ID)),
 			Date:    task.Date,
 			Title:   task.Title,
@@ -87,19 +84,13 @@ func TasksToDto(tasks []Task) []TaskInputDTO {
 	return dtos
 }
 
-func TaskToDto(task Task) TaskInputDTO {
+func TaskToDto(task Task) DTO {
 
-	return TaskInputDTO{
+	return DTO{
 		ID:      strconv.Itoa(int(task.ID)),
 		Date:    task.Date,
 		Title:   task.Title,
 		Comment: task.Comment,
 		Repeat:  task.Repeat,
 	}
-}
-
-func makeDate(datetime time.Time) time.Time {
-	y, m, d := datetime.Date()
-
-	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }
